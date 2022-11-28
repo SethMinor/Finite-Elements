@@ -69,20 +69,39 @@ y = 0:dy:Ly;
 % plot([vertices(:,1);vertices(1,1)],[vertices(:,2);vertices(1,2)])
 % grid on
 
+% LOOP OVER EACH PAIR OF X'S AND PICK A Y BELOW?!
+
 % Initialize (3 vertices) x (2*(Nx-1)*(Ny-1) element) array
 num_elements = 2*(Nx-1)*(Ny-1);
 vertices = zeros(num_elements,3);
-for i = 1:Nx
-    for j = 1:Ny
-        % Even-numbered elements face one way
-        if mod(j,2) == 0
-            vertices(j,:) = [[X(1,1),Y(1,1)]; [X(1,2),Y(1,1)]; [X(1,1),Y(2,1)]];
+% for i = 1:Nx
+%     for j = 1:Ny
+%         disp([X(j,i),Y(j,i)])
+% %         % Even-numbered elements face one way
+% %         if (mod(j,2) == 0)
+% %             %vertices(j,:) = [[X(1,1),Y(1,1)]; [X(1,2),Y(1,1)]; [X(1,1),Y(2,1)]];
+% %     
+% %         % Odd-numbered elements face another way
+% %         elseif (mod(i,2) == 1)
+% %             %ertices(j,:) = [[0, 0]; [0, 0]; [0, 0]];
+% %         end
+%     end
+% end
+
+counter = 0;
+
+for i = 1:(Nx-1)
+
+    %disp(i)
+    counter = counter + 1;
+    fprintf('Vertex %.0f (up)\n',counter)
+    %disp([[X(1,i),Y(1,i)];[X(1,i+1),Y(1,i+1)];[X(2,i),Y(2,i)]])
+    fprintf('(%.2f,%.2f), (%.2f,%.2f), (%.2f,%.2f)\n\n',X(1,i),Y(1,i),X(1,i+1),Y(1,i+1),X(2,i),Y(2,i))
     
-        % Odd-numbered elements face another way
-        else
-            vertices(j,:) = [[0, 0]; [0, 0]; [0, 0]];
-        end
-    end
+    counter = counter + 1;
+    fprintf('Vertex %.0f (down)\n',counter)
+    %disp([[X(1,i),Y(1,i)];[X(1,i+1),Y(1,i+1)];[X(2,i+1),Y(2,i+1)]])
+    fprintf('(%.2f,%.2f), (%.2f,%.2f), (%.2f,%.2f)\n\n',X(2,i),Y(2,i),X(1,i+1),Y(1,i+1),X(2,i+1),Y(2,i+1))
 end
 
 

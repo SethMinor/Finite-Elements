@@ -16,8 +16,8 @@ fs = 14;
 %      |                    |
 %      ----------------------
 
-Nx = 10; % number of x nodes
-Ny = 15; % number of y nodes
+Nx = 12; % number of x nodes
+Ny = 12; % number of y nodes
 
 % Inline function for creating linear elements
 myelement =@(x,y,a,b) max(1 - abs(x-a) - abs(y-b),0);
@@ -25,17 +25,14 @@ myelement =@(x,y,a,b) max(1 - abs(x-a) - abs(y-b),0);
 [x,y] = meshgrid(1:Nx,1:Ny);
 T = delaunay(x,y);
 
-% Plotting some example elements
+%Plotting some example elements
 z1 = myelement(x,y,6,5);
-z2 = myelement(x,y,5,5);
-z3 = myelement(x,y,1,4);
-z4 = myelement(x,y,1,3);
-z5 = myelement(x,y,Nx,Ny);
+z2 = myelement(x,y,10,5);
 
 figure (1)
-trisurf(T,x,y,z1+1.3*z2+z3+0.2*z4+z5,'facecolor',[0.8500 0.3250 0.0980])
+trisurf(T, x, y, z1 + z2,'facecolor',[0.8500 0.3250 0.0980])
 alpha 0.75; hold on;
-trisurf(T,x,y,0.001+0*z2,'facecolor','w')
+trisurf(T,x,y,0.01+0*z2,'facecolor','w')
 alpha 0.75;
 axis equal; colormap jet;
 
@@ -64,11 +61,13 @@ B4 = 0;
 % Speficy the values of u0 on the grid (xi,yj) = (i,j)
 
 % Initial Gaussian
-G =@(x,y,xo,yo) 2*exp(-(0.15)*(x-xo).^2-(0.15)*(y-yo).^2);
+Amplitude = 10;
+Damping = 0.01;
+G =@(x,y,xo,yo) Amplitude*exp(-Damping*(x-xo).^2-Damping*(y-yo).^2);
 
 % Center the Gaussian somewhere
-xo = 6;
-yo = 7;
+xo = Nx/2;
+yo = Ny/2;
 
 % Fill a matrix with the discretized initial conditions
 u0 = zeros(Ny,Nx);
@@ -80,10 +79,12 @@ end
 
 % Plot the continuous version of the IC alongside u0
 figure (2)
+
+% Continuous
 subplot(2,1,1)
-[xg,yg] = meshgrid(1:0.1:Nx,1:0.1:Ny);
-zg = 2*exp(-(0.15)*(xg-xo).^2-(0.15)*(yg-yo).^2);
-surf(xg,yg,zg)
+[X,Y] = meshgrid(linspace(1,Nx,5*Nx), linspace(1,Ny,5*Ny));
+Z = G(X,Y,xo,yo);
+surf(X,Y,Z)
 colorbar
 shading interp;
 colormap hot;
@@ -93,6 +94,7 @@ xlabel('$x$','Interpreter','latex','FontSize',fs)
 ylabel('$y$','Interpreter','latex','FontSize',fs)
 zlabel('$z$','Interpreter','latex','FontSize',fs)
 
+% Piece-wise linear approximation
 subplot(2,1,2)
 s = mesh(u0);
 s.FaceColor = 'interp';
@@ -100,7 +102,7 @@ colorbar
 shading interp;
 colormap hot;
 axis equal
-title('$u_0 = u(x,y,0)$ (Discrete)','Interpreter','latex','FontSize',fs)
+title('$u_0 = u(x,y,0)$ (Piecewise linear)','Interpreter','latex','FontSize',fs)
 xlabel('$x$','Interpreter','latex','FontSize',fs)
 ylabel('$y$','Interpreter','latex','FontSize',fs)
 zlabel('$z$','Interpreter','latex','FontSize',fs)
@@ -116,9 +118,12 @@ Nt = ceil((tf-t0)/dt);
 %Turk = questdlg('Cook the turkey?','God calling:','Oh yeah','Nay','Nay');
 
 % Fill up the M matrix
-% (Elements M_ij: phi(i,j) * phi(I,J) is zero unless i=I and/or j=J)
-fun1 = @(x,y) max(1 - abs(x-2) - abs(y-2),0).*max(1 - abs(x-2) - abs(y-2),0);
-fun2 = @(x,y) max(1 - abs(x-1) - abs(y-2),0).*max(1 - abs(x-2) - abs(y-2),0);
+% (Elements M_ij: phi(i)*phi(j) is zero unless adjacent/identical)
+Mii = @(x,y) max(1-abs(x)-abs(y), 0).*max(1-abs(x)-abs(y), 0);
+Mij = @(x,y) max(1-abs(x-1)-abs(y), 0).*max(1-abs(x)-abs(y), 0);
 
-ontop = integral2(fun1, 0,4, 0,4);
-offset = integral2(fun2, 0,4, 0,4);
+% Integral for identical tent functions. int(phi_i^2)
+identical = integral2(Mii, -2,2, -2,2);
+
+% Integral for adjacent tent functions, int(phi_i*phi_j)
+offset = integral2(Mij, -2,2, -2,2);

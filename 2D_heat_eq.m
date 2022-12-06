@@ -43,6 +43,7 @@ T = delaunay(x,y);
 Amplitude = 10;
 Damping = 0.01;
 G =@(x,y,xo,yo) Amplitude*exp(-Damping*(x-xo).^2-Damping*(y-yo).^2);
+%G =@(x,y,xo,yo) Amplitude*sin(10*pi*x) + Amplitude*sin(10*pi*y);
 
 % Center the Gaussian on the grid
 xo = Nx/2;
@@ -90,7 +91,7 @@ zlabel('$z$','Interpreter','latex','FontSize',fs)
 %% Time stepping algorithm
 % FORWARD EULER: Stability conidition, dt <= 1/(2*((1/dx)^2+(1/dy)^2))
 t0 = 0;  % initial time
-tf = 10; % final time
+tf = 5; % final time
 dt = 0.01; % time discretization
 Nt = ceil((tf-t0)/dt);
 
@@ -127,6 +128,10 @@ uold = u0;
 figure (2)
 for t = t0:dt:tf
     unew = uold + M\(dt*(f - K*uold));
+    
+    % Enforce periodic BC's
+    unew(1:Ny) = 0;
+    unew(end-Ny+1:end) = 0;
     uold = unew;
 
     disp(t)
@@ -144,7 +149,7 @@ for t = t0:dt:tf
     xlim([0 Nx])
     ylim([0 Ny])
     zlim([0 10])
-    pause(0.1)
+    pause(dt)
 end
 
 

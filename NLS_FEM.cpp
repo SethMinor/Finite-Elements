@@ -22,10 +22,10 @@ macro grad(u) [dx(u), dy(u)]//EOM
 // Discretization and end-time
 // (Note dx is pre-defined)
 verbosity = 0;
-real Dx = .01, dt = 0.0005, idt = 1./dt, T = 0.5;
+real Dx = .01, dt = 0.01, idt = 1./dt, T = 15;
 
 // Sign of non-linearity
-real sigma = 1.;
+real sigma = -1;
 
 // Build the border of the mesh
 // Parametric borders must have continuous arrows
@@ -39,7 +39,7 @@ func perio = [[4,y],[2,y],[3,x],[1,x]];
 
 // Discretize the domain
 mesh Th = buildmesh(bottom(1/Dx) + top(1/Dx) + left(1/Dx) + right(1/Dx), fixedborder = true);
-real mymeshsize = 0.01;
+real mymeshsize = 0.0001;
 Th = adaptmesh(Th, mymeshsize, IsMetric = 1, nbvx = 100000, periodic = perio); // periodic square
 plot(Th, wait = true, cmm = "Refined mesh");
 
@@ -51,27 +51,36 @@ Vh<complex> u, v;
 real mu = 20;
 
 // Define IC
-//func u0 = exp(-(x - pi)^2-(y - pi)^2 - 5); // Gaussian
-//func u0 = tanh(x)+1i;
-func u0 = sqrt(mu)*tanh(sqrt(mu)*sqrt((x - pi)^2 + (y - pi)^2)); // one vortex
+func u0 = exp(-(x - pi)^2 - (y - pi)^2); // Gaussian
+//func u0 = 2 + sqrt(mu)*(tanh(sqrt(mu)*(x - pi)))^2 + 1i*sqrt(mu); // Dark soliton stripe
+//func u0 = 2+sqrt(mu)*tanh(sqrt(mu)*(sin(x)/4 - y + pi))^2;; // one vortex
 //func u0 = sqrt(mu)*tanh(sqrt(mu)*sqrt((x - 3*pi/2)^2 + (y - 3*pi/2)^2)) *
 //					tanh(sqrt(mu)*sqrt((x - pi/2)^2 + (y - pi/2)^2)); // two vortices
 //func u0 = sqrt(mu); // flat background
-cout << "Initial mass is " << int2d(Th)((u0*conj(u0))^2) << endl;
+cout << "Initial mass is " << int2d(Th)(u0*conj(u0)) << endl;
 
 // Initialize IC
 Vh<complex> uold = u0, nonlin = u0*conj(u0);
 
 // Adaptive mesh refinement based on IC
 Vh fh = abs(u0), fhplot = fh^2;
-plot(fhplot, wait = true, cmm = "Initial condition", fill = true, dim = 3);
+plot(fhplot, wait = true, cmm = "Initial condition", fill = true, dim = 3, value = true);
 Th = adaptmesh(Th, fh, periodic = perio); // periodic square
 plot(Th, wait = true, cmm = "Adaptive mesh refinement");
 
 // Weak form of NLS
+/*
 problem NLS(u,v) = int2d(Th)(1i*idt*u*v) - int2d(Th)(1i*idt*uold*v)
 									+ int2d(Th)(sigma*nonlin*u*v)
-									+ int2d(Th)((grad(u)'*grad(v))/2);
+									+ int2d(Th)((grad(u)'*grad(v))/2)
+									+ on(1, u = sqrt(mu))
+									+ on(2, u = sqrt(mu))
+									+ on(3, u = sqrt(mu))
+									+ on(4, u = sqrt(mu));
+*/
+problem NLS(u,v) = int2d(Th)(1i*idt*u*v) - int2d(Th)(1i*idt*uold*v)
+									- int2d(Th)((grad(u)'*grad(v))/2)
+									+ int2d(Th)(sigma*nonlin*u*v);
 
 // Loop over time
 real t = 0;
@@ -81,7 +90,7 @@ while (t <= T){
 	nonlin = u*conj(u);
 	uold = u;
 	plot(nonlin, dim = 3,
-		cmm = "Mass = " + int2d(Th)(nonlin) + ", t = " + t, fill = 1);
+		cmm = "Mass = " + int2d(Th)(nonlin) + ", t = " + t, fill = 1, value = true);
 
 	// Adaptive mesh refinement?
 	Vh fh = abs(u);

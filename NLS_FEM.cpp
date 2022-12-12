@@ -1,20 +1,3 @@
-/*
---------------------------------------------------------------------------------
-Author : Georges SADAKA - LAMFA - AMIENS
-http://www.lamfa.u-picardie.fr/sadaka/FreeFem++/GTA3/GTA3FreeFem++2D.html
-
-Ionut Danaila:
-http://ionut.danaila.perso.math.cnrs.fr/zdownload/Tutorial_2019_Singapore/Singapore_Day_01.pdf
-http://ionut.danaila.perso.math.cnrs.fr/zdownload/Tutorial_2019_Singapore/Singapore_Day_02.pdf
-
-Periodic BC's
-https://www.um.es/freefem/ff++/pmwiki.php?n=Main.PeriodicBoundaryConditions
-
-Metric tensor
-http://ionut.danaila.perso.math.cnrs.fr/zdownload/Tutorial_2016_Fields/Tutorial_2016_Fields_Course_05_to_08.pdf
---------------------------------------------------------------------------------
-*/
-
 // Radius of torus
 real r = 2;
 
@@ -30,22 +13,19 @@ real b = 3;
 func gamma = sqrt( (a + r*cos(y))^2*sin(x)^2 + (b + r*cos(y))^2*cos(x)^2 );
 
 // Define macros
-// Eventually replace these guys with Laplace-Beltrami operators
-//macro grad(u) [dx(u), dy(u)]//EOM
-// On the surface of the torus
+// Gradient on the surface of the torus
 macro grad(u) [gamma*dx(u), r*dy(u)]//EOM
 
 
 // Discretization and end-time
 // (Note dx is pre-defined)
 verbosity = 0;
-real Dx = .01, dt = 0.0005, idt = 1./dt, T = 0.5;
+real Dx = .01, dt = 0.0005, idt = 1./dt, T = 0.08;
 
 // Sign of non-linearity
 real sigma = -1;
 
 // Build the border of the mesh
-// Parametric borders must have continuous arrows
 border bottom(t = 0, 1){x = 2*pi*t; y = 0; label = 1;};
 border top(t = 0, 1){x = -2*pi*t + 2*pi; y = 2*pi; label = 3;};
 border left(t = 0, 1){x = 0; y = -2*pi*t + 2*pi; label = 4;};
@@ -72,7 +52,7 @@ real mu = 20;
 //func u0 = exp(-(x - pi)^2 - (y - pi)^2*1i) + exp(-(x - pi/1.2)^2*1i - (y - pi/1.2)^2); // Two Gaussians
 //func u0 = 2 + sqrt(mu)*(tanh(sqrt(mu)*(x - pi)))^2 + 1i*sqrt(mu); // Dark soliton stripe
 //func u0 = 2 + sqrt(mu)*tanh(sqrt(mu)*(sin(x)/4 - y + pi))^2; // A snaking dark soliton stripe
-//func u0 = 2 + sqrt(mu)*tanh(sqrt(mu)*(sin(y)/4 - x + pi))^2; // Sanking stripe (other direction) GOOD FOR MESH MOVIE
+//func u0 = 2 + sqrt(mu)*tanh(sqrt(mu)*(sin(y)/4 - x + pi))^2; // Snaking stripe (other direction) GOOD FOR MESH MOVIE
 func u0 = sqrt(mu)*tanh(sqrt(mu)*(sin(y)/4 - x + pi/2))^2 + sqrt(mu)*tanh(sqrt(mu)*(sin(y)/4 - x + 3*pi/2))^2; // two poloidal stripes
 //func u0 = sqrt(mu)*tanh(sqrt(mu)*sqrt((x - 3*pi/2)^2 + (y - 3*pi/2)^2)); // one vortex
 //func u0 = sqrt(mu)*tanh(sqrt(mu)*sqrt((x - 3*pi/2)^2 + (y - 3*pi/2)^2))*tanh(sqrt(mu)*sqrt((x - pi/2)^2 + (y - pi/2)^2)); // two vortices
@@ -89,15 +69,6 @@ Th = adaptmesh(Th, fh, periodic = periodicity); // periodic square
 plot(Th, wait = true, cmm = "Adaptive mesh refinement");
 
 // Weak form of NLS
-/*
-problem NLS(u,v) = int2d(Th)(1i*idt*u*v) - int2d(Th)(1i*idt*uold*v)
-									+ int2d(Th)(sigma*nonlin*u*v)
-									+ int2d(Th)((grad(u)'*grad(v))/2)
-									+ on(1, u = sqrt(mu))
-									+ on(2, u = sqrt(mu))
-									+ on(3, u = sqrt(mu))
-									+ on(4, u = sqrt(mu));
-*/
 problem NLS(u,v) = int2d(Th)(1i*idt*u*v) - int2d(Th)(1i*idt*uold*v)
 									- int2d(Th)((grad(u)'*grad(v))/2)
 									+ int2d(Th)(sigma*nonlin*u*v);
@@ -109,7 +80,7 @@ while (t <= T){
 	NLS;
 	nonlin = u*conj(u);
 	uold = u;
-	plot(nonlin, dim = 3,
+	plot(nonlin, dim = 2,
 		cmm = "Mass = " + int2d(Th)(nonlin) + ", t = " + t, fill = 1, value = true);
 
 	// Adaptive mesh refinement?

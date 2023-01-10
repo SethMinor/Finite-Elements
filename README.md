@@ -1,2 +1,2 @@
 # Finite-Elements
-Finite element simulations for PDE's.
+Finite element simulations for PDEs.
